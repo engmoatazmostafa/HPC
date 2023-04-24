@@ -3,3 +3,6 @@
 ################################################################################
 
 /.vs/HPC/v17
+/.vs
+/Assignment1/MatrixMultiplication/MatrixMultiplication/x64/Debug
+/Assignment1/MatrixMultiplication/.vs/MatrixMultiplication
