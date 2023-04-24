@@ -1,14 +1,15 @@
-#include "InputDataDecomposition.h"
+#include "OutputDataDecomposition.h"
 #include <iostream>
 #include <mpi.h>
 
-InputDataDecomposition::InputDataDecomposition(int argc, char* argv[])
+OutputDataDecomposition::OutputDataDecomposition(int argc, char* argv[])
 {
 	_argc = argc;
 	_argv = &argv;
+
 }
 
-void InputDataDecomposition::Multiply(int A[][N], int B[][N], int C[][N])  
+void OutputDataDecomposition::Multiply(int A[][N], int B[][N], int C[][N])
 {
     MPI_Init(&_argc, _argv);
     int rank, numberOfProcesses;
@@ -16,7 +17,7 @@ void InputDataDecomposition::Multiply(int A[][N], int B[][N], int C[][N])
     MPI_Comm_size(MPI_COMM_WORLD, &numberOfProcesses);
     if (rank == 0)
     {
-        printf("MATRIX MULTIPLICATION USING INPUT DATA DECOMPOSITION\n");
+        printf("MATRIX MULTIPLICATION USING OUTPUT DATA DECOMPOSITION\n");
 
         //master process
         int nProcIndex = 1;
@@ -24,20 +25,19 @@ void InputDataDecomposition::Multiply(int A[][N], int B[][N], int C[][N])
         {
             for (int nColumn = 0; nColumn < N; nColumn++)
             {
+                //one child process per output
+                if (nProcIndex >= numberOfProcesses) break;
+                int input[N][2];
                 for (int k = 0; k < N; k++)
                 {
-                    if (nProcIndex >= numberOfProcesses) break;
-                    int input[2] = {
-                    A[nRow][k],
-                    B[k][nColumn]
-                    };
-                    int result;
-                    MPI_Sendrecv(input, 2, MPI_INT, nProcIndex, 0, &result, 1, MPI_INT, nProcIndex, 1, MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
-                    C[nRow][nColumn] += result;
-                    printf("master process starts child# %d for %d,%d\n", nProcIndex, nRow, nColumn);
-                    nProcIndex++;
+                    input[k][0] = A[nRow][k];
+                    input[k][1] = B[k][nColumn];
                 }
-
+                int result;
+                MPI_Sendrecv(input, N * 2, MPI_INT, nProcIndex, 0, &result, 1, MPI_INT, nProcIndex, 1, MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
+                C[nRow][nColumn] = result;
+                printf("master process starts child# %d for %d,%d\n", nProcIndex, nRow, nColumn);
+                nProcIndex++;
             }
 
         }
@@ -56,9 +56,13 @@ void InputDataDecomposition::Multiply(int A[][N], int B[][N], int C[][N])
     else if (rank > 0)
     {
         //child process
-        int input[2];
-        MPI_Recv(input, 2, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
-        int Z = input[0] * input[1];
+        int input[N][2];
+        MPI_Recv(input, N * 2, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
+        int Z = 0;
+        for (int k = 0; k < N; k++)
+        {
+            Z += input[k][0] * input[k][1];
+        }
         MPI_Send(&Z, 1, MPI_INT, 0, 1, MPI_COMM_WORLD);
         printf("child process %d replies value=%d\n", rank, Z);
         MPI_Barrier(MPI_COMM_WORLD);
