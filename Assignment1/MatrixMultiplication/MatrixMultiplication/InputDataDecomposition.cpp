@@ -61,7 +61,6 @@ void InputDataDecomposition::Multiply(int A[][N], int B[][N], int C[][N])
         int Z = input[0] * input[1];
         MPI_Send(&Z, 1, MPI_INT, 0, 1, MPI_COMM_WORLD);
         printf("child process %d replies value=%d\n", rank, Z);
-        MPI_Barrier(MPI_COMM_WORLD);
 
     }
     MPI_Finalize();
