@@ -6,33 +6,35 @@
 #include <time.h>
 #include <malloc.h>
 #include <cstdlib>
-#include <format>
+#include "SequentialProcessor.h"
+//#include <format>
 using namespace std;
-#define N 1000000
+//#define N 1000000
+#define N 10
 
-void showElapsed(int id, char* m);
-void showVector(int* v, int n, int id);
+//void showElapsed(int id, char* m);
+//void showVector(int* v, int n, int id);
 int* merge(int* A, int asize, int* B, int bsize);
-void swap(int* v, int i, int j);
+//void swap(int* v, int i, int j);
 void m_sort(int* A, int min, int max);
 
 double startT, stopT;
 
 double startTime;
 
-void showElapsed(int id, char* m)
-{
-	printf("%d: %s %f secs\n", id, m, (clock() - startTime) / CLOCKS_PER_SEC);
-}
-
-void showVector(int* v, int n, int id)
-{
-	int i;
-	printf("%d: ", id);
-	for (i = 0; i < n; i++)
-		printf("%d ", v[i]);
-	putchar('\n');
-}
+//void showElapsed(int id, char* m)
+//{
+//	printf("%d: %s %f secs\n", id, m, (clock() - startTime) / CLOCKS_PER_SEC);
+//}
+//
+//void showVector(int* v, int n, int id)
+//{
+//	int i;
+//	printf("%d: ", id);
+//	for (i = 0; i < n; i++)
+//		printf("%d ", v[i]);
+//	putchar('\n');
+//}
 
 int* merge(int* A, int asize, int* B, int bsize) {
 	int ai, bi, ci, i;
@@ -73,13 +75,13 @@ int* merge(int* A, int asize, int* B, int bsize) {
 	return C;
 }
 
-void swap(int* v, int i, int j)
-{
-	int t;
-	t = v[i];
-	v[i] = v[j];
-	v[j] = t;
-}
+//void swap(int* v, int i, int j)
+//{
+//	int t;
+//	t = v[i];
+//	v[i] = v[j];
+//	v[j] = t;
+//}
 
 void m_sort(int* A, int min, int max)
 {
@@ -119,36 +121,56 @@ int main(int argc, char** argv)
 	MPI_Comm_size(MPI_COMM_WORLD, &p);
 
 	startT = clock();
+	SequentialProcessor seqProc;
 	if (id == 0)
 	{
 		int r;
 		srand(clock());
 		s = n / p;
 		r = n % p;
-		data = (int*)malloc((n + s - r) * sizeof(int));
-		for (i = 0; i < n; i++)
-			data[i] = rand();
+		int size = 0;
 		if (r != 0)
 		{
+			size = (n + s - r);
+			data = (int*)malloc((n + s - r) * sizeof(int));
+			for (i = 0; i < n; i++)
+				data[i] = rand();
+
+
 			for (i = n; i < n + s - r; i++)
 				data[i] = 0;
 			s = s + 1;
 		}
+		else {
+			size = (n);
 
+			data = (int*)malloc(n * sizeof(int));
+			for (i = 0; i < n; i++)
+				data[i] = rand();
 
+		}
+
+		printf("s: %d,N: %d, size: %d \n", s, N, size);
 		MPI_Bcast(&s, 1, MPI_INT, 0, MPI_COMM_WORLD);
 		chunk = (int*)malloc(s * sizeof(int));
 		MPI_Scatter(data, s, MPI_INT, chunk, s, MPI_INT, 0, MPI_COMM_WORLD);
-		m_sort(chunk, 0, s - 1);
-		/* showVector(chunk, s, id); */
+		//m_sort(chunk, 0, s - 1);
+		seqProc.binarySort(chunk, s);
+		printf("id:%d chuck s:%d\n", id, s);
+
+		 //showVector(chunk, s, id); 
 	}
 	else
 	{
 		MPI_Bcast(&s, 1, MPI_INT, 0, MPI_COMM_WORLD);
 		chunk = (int*)malloc(s * sizeof(int));
 		MPI_Scatter(data, s, MPI_INT, chunk, s, MPI_INT, 0, MPI_COMM_WORLD);
-		m_sort(chunk, 0, s - 1);
-		/* showVector(chunk, s, id); */
+		//m_sort(chunk, 0, s - 1);
+		seqProc.binarySort(chunk, s);
+
+		printf("id:%d chuck s:%d\n", id, s);
+
+		 //showVector(chunk, s, id); 
 	}
 
 	step = 1;
