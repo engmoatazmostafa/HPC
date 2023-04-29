@@ -1,3 +1,7 @@
 ﻿  CyclicBlock.cpp
-F:\mezo\pre-master\HighPerformanceComputing\MPI\HPC\Assignment3\CyclicBlock\CyclicBlock.cpp(9,43): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+  SparseMatrix.cpp
+F:\mezo\pre-master\HighPerformanceComputing\MPI\HPC\Assignment3\CyclicBlock\SparseMatrix.cpp(14,32): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+F:\mezo\pre-master\HighPerformanceComputing\MPI\HPC\Assignment3\CyclicBlock\SparseMatrix.cpp(15,34): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+F:\mezo\pre-master\HighPerformanceComputing\MPI\HPC\Assignment3\CyclicBlock\SparseMatrix.cpp(87,41): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+  Generating Code...
   CyclicBlock.vcxproj -> F:\mezo\pre-master\HighPerformanceComputing\MPI\HPC\Assignment3\CyclicBlock\x64\Debug\CyclicBlock.exe
