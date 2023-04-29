@@ -52,8 +52,6 @@ void ArrayProcessor::MergeSort(int* data, int sizeOfArray)
 
 void ArrayProcessor::BinarySort(int* data, int sizeOfArray)
 {
-
-
     int rank, numberOfProcesses; // for storing this process' rank, and the number of processes
 
     MPI_Init(&_argc, _argv);
@@ -68,13 +66,13 @@ void ArrayProcessor::BinarySort(int* data, int sizeOfArray)
     int *rec_buf;          // buffer where the received data should be stored
     int minSplitSize = sizeOfArray / numberOfProcesses;
     int maxSplitSize = minSplitSize;
-    int rootValue = 0;
     int* intermediateBuf;
 
 
+
+    intermediateBuf = (int*)malloc(sizeof(int) * sizeOfArray);
     sendcounts = (int*)malloc(sizeof(int) * numberOfProcesses);
     displacements = (int*)malloc(sizeof(int) * numberOfProcesses);
-
     // calculate send counts and displacements
     for (int i = 0; i < numberOfProcesses; i++) {
         sendcounts[i] = minSplitSize;
@@ -88,38 +86,30 @@ void ArrayProcessor::BinarySort(int* data, int sizeOfArray)
         sum += sendcounts[i];
     }
     rec_buf = (int*)malloc(sizeof(int) * maxSplitSize);
-    intermediateBuf = (int*)malloc(sizeof(int) * sizeOfArray);
-    if (0 == rank) {
+    int partition_size = 0;
 
-        for (int i = 0; i < numberOfProcesses; i++) {
-            printf("sendcounts[%d] = %d\tdispls[%d] = %d\n", i, sendcounts[i], i, displacements[i]);
-        }
-    }
+    
     MPI_Bcast(&maxSplitSize, 1, MPI_INT, 0, MPI_COMM_WORLD);
     // divide the data among processes as described by sendcounts and displs
     MPI_Scatterv(data, sendcounts, displacements, MPI_INT, rec_buf, maxSplitSize, MPI_INT, 0, MPI_COMM_WORLD);
 
     printf("\n");
+
+    //each process do sequential sort on its own partition
     SequentialProcessor seqProc;
     seqProc.binarySort(rec_buf, sendcounts[rank]);
-    if (sendcounts[rank] < maxSplitSize)
-    {
-        rec_buf[maxSplitSize - 1] = 0;
-    }
-    printf("sorted buf[%d]:", rank);
+
 
     MPI_Gatherv(rec_buf, sendcounts[rank], MPI_INT, intermediateBuf, sendcounts, displacements, MPI_INT, 0, MPI_COMM_WORLD);
 
+    //int baseSize = sendcounts[0];
+    //for (int i = 0; i < numberOfProcesses - 1; i++) {
+    //    merge(intermediateBuf, baseSize, intermediateBuf + baseSize, sendcounts[i + 1]);
+    //    baseSize += sendcounts[i + 1];
+    //}
+
     if (rank == 0)
     {
-        printf("\n");
-        printf("semi-sorted buf:");
-
-        for (int i = 0; i < sizeOfArray; i++)
-        {
-            printf(" %d ", intermediateBuf[i]);
-        }
-
         int baseSize = sendcounts[0];
         for (int i = 0; i < numberOfProcesses - 1; i++) {
             merge(intermediateBuf, baseSize, intermediateBuf + baseSize, sendcounts[i + 1]);
@@ -127,7 +117,7 @@ void ArrayProcessor::BinarySort(int* data, int sizeOfArray)
         }
 
 
-        printf("\n");
+        //printf("\n");
         printf("sorted buf:");
 
         for (int i = 0; i < sizeOfArray; i++)
