@@ -5,6 +5,13 @@ SparseMatrix::SparseMatrix(int argc, char* argv[])
 	_argc = argc;
 	_argv = &argv;
 }
+/// <summary>
+/// multiply sparse matrix by a vector
+/// parallel execution 
+/// task decomposed by round-robin method to get maximum load balancing
+/// </summary>
+/// <param name="A">sparse matrix</param>
+/// <param name="B">vector</param>
 void SparseMatrix::MultiplyInParallel(vector<vector<int>> A, vector<int> B)
 {
     MPI_Init(&_argc, _argv);
@@ -12,7 +19,6 @@ void SparseMatrix::MultiplyInParallel(vector<vector<int>> A, vector<int> B)
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &numberOfProcesses);
     int numberOfRows = A.size();
-    int numerOfColumns = B.size(); //number of columns in A = number of rows in B
     int* intermediateResult;
     intermediateResult = (int*)malloc(sizeof(int) * numberOfRows);
     int sizeOfProcessChunk = numberOfRows / numberOfProcesses;
@@ -24,44 +30,36 @@ void SparseMatrix::MultiplyInParallel(vector<vector<int>> A, vector<int> B)
     int* resultChunk = (int*)malloc(sizeof(int) * sizeOfProcessChunk);
 
     int nRowIndex = rank;
-    int count = 0;
+    int chunkSize = 0;
+    //round-robin rows data partitioning 
     while (nRowIndex < numberOfRows)
     {
         int sum = CalulcateOneValue(A, B, nRowIndex);
         printf("\nrow[%d] in process[%d] result:%d\n", nRowIndex, rank, sum);
-        resultChunk[count] = sum;
-        assignments[count] = nRowIndex;
+        resultChunk[chunkSize] = sum;
+        assignments[chunkSize] = nRowIndex;
         nRowIndex += numberOfProcesses;
-        count++;
-    }
-    while (count < sizeOfProcessChunk)
-    {
-        assignments[count] = -1;
-        resultChunk[count] = 0;
-        count++;
+        chunkSize++;
     }
     if (rank == 0)
     {
-        for (int i = 0; i < count; i++)
+        for (int i = 0; i < chunkSize; i++)
         {
-            if (assignments[i] > -1)
-            {
-
-                intermediateResult[assignments[i]] = resultChunk[i];
-            }
+            intermediateResult[assignments[i]] = resultChunk[i];
         }
         for (int nProcessIndex = 1; nProcessIndex < numberOfProcesses; nProcessIndex++)
         {
+            //get result from others
+            int tmpChuckSize;
             int* tmpAssignments = (int*)malloc(sizeof(int) * sizeOfProcessChunk);
             int* tmpResults = (int*)malloc(sizeof(int) * sizeOfProcessChunk);
-            MPI_Recv(tmpAssignments, sizeOfProcessChunk, MPI_INT, nProcessIndex, 0, MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
-            MPI_Recv(tmpResults, sizeOfProcessChunk, MPI_INT, nProcessIndex, 0, MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
-            for (int i = 0; i < sizeOfProcessChunk; i++)
+            MPI_Recv(&tmpChuckSize, 1, MPI_INT, nProcessIndex, 0, MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
+            MPI_Recv(tmpAssignments, tmpChuckSize, MPI_INT, nProcessIndex, 0, MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
+            MPI_Recv(tmpResults, tmpChuckSize, MPI_INT, nProcessIndex, 0, MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
+            //set the global array 
+            for (int i = 0; i < tmpChuckSize; i++)
             {
-                if (tmpAssignments[i] > -1) 
-                {
-                    intermediateResult[tmpAssignments[i]] = tmpResults[i];
-                }
+                intermediateResult[tmpAssignments[i]] = tmpResults[i];
             }
         }
         printf("\noutput:");
@@ -72,10 +70,12 @@ void SparseMatrix::MultiplyInParallel(vector<vector<int>> A, vector<int> B)
         printf("\n");
 
     }
-    else 
+    else
     {
-        MPI_Send(assignments, sizeOfProcessChunk, MPI_INT, 0, 0, MPI_COMM_WORLD);
-        MPI_Send(resultChunk, sizeOfProcessChunk, MPI_INT, 0, 0, MPI_COMM_WORLD);
+        //send result to root
+        MPI_Send(&chunkSize, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
+        MPI_Send(assignments, chunkSize, MPI_INT, 0, 0, MPI_COMM_WORLD);
+        MPI_Send(resultChunk, chunkSize, MPI_INT, 0, 0, MPI_COMM_WORLD);
     }
 
     MPI_Finalize();

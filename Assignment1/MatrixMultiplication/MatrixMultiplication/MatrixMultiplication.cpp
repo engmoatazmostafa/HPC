@@ -18,6 +18,19 @@ int main(int argc, char* argv[])
             { 0, 0 , 0},
             { 0, 0 , 0} };
 
+
+    vector<vector<int>> vA = {
+        {1,1,1,1}
+        ,{1,1,1,1}
+        ,{1,1,1,1}
+        ,{1,1,1,1}
+    };
+    vector<vector<int>> vB = {
+        {1,1,1,1}
+        ,{1,1,1,1}
+        ,{1,1,1,1}
+        ,{1,1,1,1}
+    };
     DataDecomposition dataDecompisition = DataDecomposition::Input;
     for (int i = 0; i < argc; i++) {
         if (std::string(argv[i]).compare("data-decomposition-input"))
@@ -37,8 +50,13 @@ int main(int argc, char* argv[])
         }
     }
 
+    dataDecompisition = DataDecomposition::Intermediate;
     ParallelMatrixMultiplication* instance = ParallelMatrixMultiplicationFactory::CreateInstance(dataDecompisition,argc, argv);
-    instance->Multiply(A, B, C);
+
+    instance->Multiply(vA, vB);
+
+
+
 
     return 0;
 
