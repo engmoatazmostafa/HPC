@@ -78,13 +78,17 @@ void OutputDataDecomposition::Multiply(vector<vector<int>> A, vector<vector<int>
     int rank, numberOfProcesses;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &numberOfProcesses);
-
-    int* sendcounts = (int*)malloc(sizeof(int) * numberOfProcesses); // array describing how many row to send to each process
+    
+    // array describing how many row to send to each process
+    int* sendcounts = (int*)malloc(sizeof(int) * numberOfProcesses); 
+    // array describing how many rows to skip to each process
     int* displacements = (int*)malloc(sizeof(int) * numberOfProcesses);
 
     int minSplitSize = (numberOfRows * numberOfColumns) / numberOfProcesses;
-    int rem = (numberOfRows * numberOfColumns) % numberOfProcesses; // elements remaining after division among processes
-    int sum = 0;                // Sum of counts. Used to calculate displacements
+    // elements remaining after division among processes
+    int rem = (numberOfRows * numberOfColumns) % numberOfProcesses;
+    // Sum of counts. Used to calculate displacements
+    int sum = 0;
     for (int i = 0; i < numberOfProcesses; i++) {
         sendcounts[i] = minSplitSize;
         if (rem > 0) {
@@ -96,10 +100,13 @@ void OutputDataDecomposition::Multiply(vector<vector<int>> A, vector<vector<int>
     }
 
 
+    //rows indeces range for current process
     int lowerRowIndex = displacements[rank];
     int upperRowIndex = displacements[rank] + sendcounts[rank] - 1;
     if (rank == 0)
     {
+        //root process
+
         vector<vector<int>> C(numberOfRows);
         for (int i = 0; i < numberOfRows; i++)
         {
@@ -107,6 +114,7 @@ void OutputDataDecomposition::Multiply(vector<vector<int>> A, vector<vector<int>
             C[i] = cells;
         }
 
+        //calculate output for assigned cells
         for (int index = lowerRowIndex; index <= upperRowIndex; index++)
         {
             int rowIndex = index / numberOfColumns;
@@ -119,6 +127,9 @@ void OutputDataDecomposition::Multiply(vector<vector<int>> A, vector<vector<int>
             }
             C[rowIndex][columnIndex] = cellValue;
         }
+
+
+        //sequential part (other process will not do it):  merge output for other processes
         for (int otherProcessIndex = 1; otherProcessIndex < numberOfProcesses; otherProcessIndex++)
         {
             int otherResultSize = sendcounts[otherProcessIndex];

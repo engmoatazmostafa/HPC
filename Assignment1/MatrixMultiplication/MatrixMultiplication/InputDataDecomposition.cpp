@@ -76,12 +76,16 @@ void InputDataDecomposition::Multiply(vector<vector<int>> A, vector<vector<int>>
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &numberOfProcesses);
 
-    int* sendcounts = (int*)malloc(sizeof(int) * numberOfProcesses); // array describing how many row to send to each process
+    // array describing how many rows to send to each process
+    int* sendcounts = (int*)malloc(sizeof(int) * numberOfProcesses); 
+    // array describing how many rows to skip to each process
     int* displacements = (int*)malloc(sizeof(int) * numberOfProcesses);
 
     int minSplitSize = numberOfRows / numberOfProcesses;
-    int rem = (numberOfRows) % numberOfProcesses; // elements remaining after division among processes
-    int sum = 0;                // Sum of counts. Used to calculate displacements
+    // elements remaining after division among processes
+    int rem = (numberOfRows) % numberOfProcesses; 
+    // Sum of counts. Used to calculate displacements
+    int sum = 0;                
     for (int i = 0; i < numberOfProcesses; i++) {
         sendcounts[i] = minSplitSize;
         if (rem > 0) {
@@ -91,6 +95,7 @@ void InputDataDecomposition::Multiply(vector<vector<int>> A, vector<vector<int>>
         displacements[i] = sum;
         sum += sendcounts[i];
     }
+
     if (rank == 0)
     {
         for (int i = 0; i < numberOfRows; i++)
@@ -100,11 +105,15 @@ void InputDataDecomposition::Multiply(vector<vector<int>> A, vector<vector<int>>
         }
     }
     
-
+    //rows indeces range for current process
     int lowerRowIndex = displacements[rank];
     int upperRowIndex = displacements[rank] + sendcounts[rank] - 1;
+
     if (rank == 0)
     {
+        //root process
+
+        //calculate output for assigned rows
         for (int rowIndex = lowerRowIndex; rowIndex <= upperRowIndex; rowIndex++)
         {
             for (int columnIndex = 0; columnIndex < numberOfColumns; columnIndex++)
@@ -118,6 +127,8 @@ void InputDataDecomposition::Multiply(vector<vector<int>> A, vector<vector<int>>
                 C[rowIndex][columnIndex] = cellValue;
             }
         }
+
+        //sequential part (other process will not do it):  merge output for other processes
         for (int otherProcessIndex = 1; otherProcessIndex < numberOfProcesses; otherProcessIndex++)
         {
             int otherResultSize = sendcounts[otherProcessIndex] * numberOfColumns;
@@ -138,9 +149,14 @@ void InputDataDecomposition::Multiply(vector<vector<int>> A, vector<vector<int>>
     }
     else
     {
+        //child process
+        
+        //create buffer for output
         int subResultSize = sendcounts[rank] * numberOfColumns;
         int* subResultBuffer = (int*)malloc(sizeof(int) * subResultSize);
         int bufferIndex = 0;
+        
+        //calculate output for assigned rows
         for (int rowIndex = lowerRowIndex; rowIndex <= upperRowIndex; rowIndex++)
         {
             for (int columnIndex = 0; columnIndex < numberOfColumns; columnIndex++)
@@ -155,6 +171,8 @@ void InputDataDecomposition::Multiply(vector<vector<int>> A, vector<vector<int>>
                 bufferIndex++;
             }
         }
+
+        //send output to root process
         MPI_Send(subResultBuffer, subResultSize, MPI_INT, 0, 0, MPI_COMM_WORLD);
 
     }
