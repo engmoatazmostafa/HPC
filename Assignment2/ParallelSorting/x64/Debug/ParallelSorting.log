@@ -1,5 +1,2 @@
-﻿  ArrayProcessor.cpp
-F:\mezo\pre-master\HighPerformanceComputing\MPI\HPC\Assignment2\ParallelSorting\ArrayProcessor.cpp(463,57): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
-  TestBinarySort.cpp
-  Generating Code...
+﻿  TestBinarySort.cpp
   ParallelSorting.vcxproj -> F:\mezo\pre-master\HighPerformanceComputing\MPI\HPC\Assignment2\ParallelSorting\x64\Debug\ParallelSorting.exe

@@ -10,6 +10,8 @@ public:
 	void MergeSort(int* data, int sizeOfArray);
 	void FindMin(int* data, int sizeOfArray);
 	void FindMax(int* data, int sizeOfArray);
+	void multipleMerge(int intermediateBuf[], int* sendcounts, int* displacements, int numberOfProcesses);
+
 private:
 	int _argc;
 	char*** _argv;

@@ -50,6 +50,58 @@ using namespace std;
 //    }
 //}
 
+
+
+void testMultipleMerge(ArrayProcessor* proc) {
+    int sizeOfArray = 29;
+    int numberOfProcesses = 6;
+    int* sendcounts;            // array describing how many elements to send to each process
+    int* displacements;                // array describing the displacements where each segment begins
+
+    int rem = (sizeOfArray) % numberOfProcesses; // elements remaining after division among processes
+    int minSplitSize = sizeOfArray / numberOfProcesses;
+    int sum = 0;
+
+    int* intermediateBuf;
+    intermediateBuf = (int*)malloc(sizeof(int) * sizeOfArray);
+    sendcounts = (int*)malloc(sizeof(int) * numberOfProcesses);
+    displacements = (int*)malloc(sizeof(int) * numberOfProcesses);
+    for (int i = 0; i < numberOfProcesses; i++) {
+        sendcounts[i] = minSplitSize;
+        if (rem > 0) {
+            sendcounts[i]++;
+            rem--;
+        }
+
+        displacements[i] = sum;
+        sum += sendcounts[i];
+    }
+    int tmp = 0;
+    for (int i = 0; i < numberOfProcesses; i++) {
+        for (int j = 0; j < sendcounts[i]; j++ , tmp++)
+        {
+            intermediateBuf[tmp] = j + 1;
+        }
+    }
+    printf("\nunmerged [");
+    for (int i = 0; i < sizeOfArray; i++)
+    {
+        printf(" %d ", intermediateBuf[i]);
+
+    }
+    printf("]\n");
+
+    proc->multipleMerge(intermediateBuf, sendcounts, displacements, numberOfProcesses);
+    printf("\nmerged [");
+    for (int i = 0; i < sizeOfArray; i++)
+    {
+        printf(" %d " , intermediateBuf[i]);
+
+    }
+    printf("]\n");
+
+}
+
 // Driver Code
 int main(int argc, char** argv)
 {

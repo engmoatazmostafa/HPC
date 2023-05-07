@@ -211,11 +211,13 @@ void ArrayProcessor::MergeSort(int* data, int sizeOfArray)
 
     if (rank == 0)
     {
-        int baseSize = sendcounts[0];
-        for (int i = 0; i < numberOfProcesses - 1; i++) {
-            merge(intermediateBuf, baseSize, intermediateBuf + baseSize, sendcounts[i + 1]);
-            baseSize += sendcounts[i + 1];
-        }
+        //int baseSize = sendcounts[0];
+        //for (int i = 0; i < numberOfProcesses - 1; i++) {
+        //    merge(intermediateBuf, baseSize, intermediateBuf + baseSize, sendcounts[i + 1]);
+        //    baseSize += sendcounts[i + 1];
+        //}
+        multipleMerge(intermediateBuf, sendcounts, displacements, numberOfProcesses);
+
 
 
         printf("\n");
@@ -456,6 +458,83 @@ void ArrayProcessor::merge(int arr[], int arr_size, int arr_2[], int arr_2_size)
     memcpy(arr, scratch, (arr_size + arr_2_size) * sizeof(int));
 
     free(scratch);
+}
+
+void ArrayProcessor::multipleMerge(int intermediateBuf[], int* sendcounts, int* displacements, int numberOfProcesses)
+{
+    int step = 1;
+    int index1 = 0;
+    int size1 = 0;
+    int index2 = index1 + step;
+    int size2 = 0;
+    int tmp = 0;
+    int index3 = 0;
+    int displacement1 = 0;
+    int displacement2 = 0;
+    while (step < numberOfProcesses)
+    {
+
+        index1 = 0;
+
+        while (index1 < numberOfProcesses)
+        {
+            index2 = index1 + step;
+            index3 = index2 + step;
+            size1 = 0;
+            tmp = index1;
+            while (tmp < index2 && tmp < numberOfProcesses)
+            {
+                size1 += sendcounts[tmp];
+                tmp++;
+            }
+            size2 = 0;
+            tmp = index2;
+            while (tmp < index3 && tmp < numberOfProcesses)
+            {
+                size2 += sendcounts[tmp];
+                tmp++;
+            }
+            if (size1 > 0 && size2 > 0)
+            {
+                merge(intermediateBuf + displacements[index1], size1, intermediateBuf + displacements[index2], size2);
+            }
+            else
+            {
+                break;
+            }
+            index1 = index3;
+        }
+
+        tmp = step;
+        step = step * 2;
+        if (step > numberOfProcesses)
+        {
+            index1 = 0;
+            index2 = tmp;
+            size1 = 0;
+            displacement1 = displacements[index1];
+            tmp = index1;
+            while (tmp < index2 && tmp < numberOfProcesses)
+            {
+                size1 += sendcounts[tmp];
+                tmp++;
+            }
+            tmp = index2;
+            while (tmp < numberOfProcesses)
+            {
+                size2 = sendcounts[tmp];
+                displacement2 = displacements[tmp];
+                if (size1 > 0 && size2 > 0)
+                {
+                    merge(intermediateBuf + displacement1, size1, intermediateBuf + displacement2, size2);
+                    size1 += size2;
+                }
+                tmp++;
+            }
+
+        }
+    }
+
 }
 
 void ArrayProcessor::QuickSort(int arr[], size_t size, int my_rank, int comm_sz)
