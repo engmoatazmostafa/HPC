@@ -10,13 +10,13 @@
 ////#include <format>
 //using namespace std;
 ////#define N 1000000
-//#define N 10
+//#define N 100
 //
 ////void showElapsed(int id, char* m);
 ////void showVector(int* v, int n, int id);
 //int* merge(int* A, int asize, int* B, int bsize);
 ////void swap(int* v, int i, int j);
-//void m_sort(int* A, int min, int max);
+//void mergeSort(int* A, int min, int max);
 //
 //double startT, stopT;
 //
@@ -83,7 +83,7 @@
 ////	v[j] = t;
 ////}
 //
-//void m_sort(int* A, int min, int max)
+//void mergeSort(int* A, int min, int max)
 //{
 //	int* C;		/* dummy, just to fit the function */
 //	int mid = (min + max) / 2;
@@ -96,9 +96,9 @@
 //	}
 //	else {
 //		/* Otherwise, sort the first half */
-//		m_sort(A, min, mid);
+//		mergeSort(A, min, mid);
 //		/* Now sort the second half */
-//		m_sort(A, mid + 1, max);
+//		mergeSort(A, mid + 1, max);
 //		/* Now merge the two halves */
 //		C = merge(A + min, lowerCount, A + mid + 1, upperCount);
 //	}

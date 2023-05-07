@@ -15,7 +15,8 @@ ArrayProcessor::ArrayProcessor(int argc, char* argv[])
 	_argv = &argv;
 }
 
-void ArrayProcessor::MergeSort(int* data, int sizeOfArray)
+
+void ArrayProcessor::QuickSort(int* data, int sizeOfArray)
 {
     int my_rank, comm_sz;
 
@@ -25,22 +26,29 @@ void ArrayProcessor::MergeSort(int* data, int sizeOfArray)
 
 
 
-    merge_sort(data, sizeOfArray, my_rank, comm_sz);
+    if (my_rank ==0 )
+    {
+        printf("\narray before sorting\t");
+        for (int i = 0; i < sizeOfArray; ++i) {
+            printf("%d ", data[i]);
+        }
+        printf("\n");
+    }
+    QuickSort(data, sizeOfArray, my_rank, comm_sz);
 
     if (my_rank == 0) {
-        SequentialProcessor seqProcessor;
+        //SequentialProcessor seqProcessor;
 
-        if (seqProcessor.validate(data, sizeOfArray)) {
-            printf("[Info] Validation successful!\n");
-        }
-        else {
-            printf("[Error] Validation not successful :(\n");
+        //if (seqProcessor.validate(data, sizeOfArray)) {
+        //    printf("\n[Info] Validation successful!\n");
+        //}
+        //else {
+        //    printf("\n[Error] Validation not successful :(\n");
 
-        }
+        //}
         //print_array(data, sizeOfArray);
-        printf("\t");
-        int i;
-        for (i = 0; i < sizeOfArray; ++i) {
+        printf("\narray output from merge sort\t");
+        for (int i = 0; i < sizeOfArray; ++i) {
             printf("%d ", data[i]);
         }
         printf("\n");
@@ -118,6 +126,99 @@ void ArrayProcessor::BinarySort(int* data, int sizeOfArray)
 
 
         //printf("\n");
+        printf("sorted buf:");
+
+        for (int i = 0; i < sizeOfArray; i++)
+        {
+            printf(" %d ", intermediateBuf[i]);
+        }
+
+        printf("\n");
+    }
+
+
+    printf("\n");
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    MPI_Finalize();
+
+    free(sendcounts);
+    free(displacements);
+
+}
+
+void ArrayProcessor::MergeSort(int* data, int sizeOfArray)
+{
+    int rank, numberOfProcesses; // for storing this process' rank, and the number of processes
+
+    MPI_Init(&_argc, _argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &numberOfProcesses);
+
+    int* sendcounts;            // array describing how many elements to send to each process
+    int* displacements;                // array describing the displacements where each segment begins
+    int rem = (sizeOfArray) % numberOfProcesses; // elements remaining after division among processes
+    int sum = 0;                // Sum of counts. Used to calculate displacements
+    //int rec_buf[10000];          // buffer where the received data should be stored
+    int* rec_buf;          // buffer where the received data should be stored
+    int minSplitSize = sizeOfArray / numberOfProcesses;
+    int maxSplitSize = minSplitSize;
+    int* intermediateBuf;
+
+
+
+    intermediateBuf = (int*)malloc(sizeof(int) * sizeOfArray);
+    sendcounts = (int*)malloc(sizeof(int) * numberOfProcesses);
+    displacements = (int*)malloc(sizeof(int) * numberOfProcesses);
+    // calculate send counts and displacements
+    for (int i = 0; i < numberOfProcesses; i++) {
+        sendcounts[i] = minSplitSize;
+        if (rem > 0) {
+            maxSplitSize = minSplitSize + 1;
+            sendcounts[i]++;
+            rem--;
+        }
+
+        displacements[i] = sum;
+        sum += sendcounts[i];
+    }
+    rec_buf = (int*)malloc(sizeof(int) * maxSplitSize);
+    int partition_size = 0;
+
+
+    MPI_Bcast(&maxSplitSize, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    // divide the data among processes as described by sendcounts and displs
+    MPI_Scatterv(data, sendcounts, displacements, MPI_INT, rec_buf, maxSplitSize, MPI_INT, 0, MPI_COMM_WORLD);
+
+
+    printf("\nProcess: %d sorts array with size: %d , elements:[" , rank , sendcounts[rank]);
+    for (int i = 0; i < sendcounts[rank] - 1; i++) {
+        printf(" %d ", rec_buf[i]);
+    }
+    printf("]\n");
+    //each process do sequential sort on its own partition
+    SequentialProcessor seqProc;
+    seqProc.MergeSort(rec_buf, 0, sendcounts[rank] - 1);
+
+
+    MPI_Gatherv(rec_buf, sendcounts[rank], MPI_INT, intermediateBuf, sendcounts, displacements, MPI_INT, 0, MPI_COMM_WORLD);
+
+    //int baseSize = sendcounts[0];
+    //for (int i = 0; i < numberOfProcesses - 1; i++) {
+    //    merge(intermediateBuf, baseSize, intermediateBuf + baseSize, sendcounts[i + 1]);
+    //    baseSize += sendcounts[i + 1];
+    //}
+
+    if (rank == 0)
+    {
+        int baseSize = sendcounts[0];
+        for (int i = 0; i < numberOfProcesses - 1; i++) {
+            merge(intermediateBuf, baseSize, intermediateBuf + baseSize, sendcounts[i + 1]);
+            baseSize += sendcounts[i + 1];
+        }
+
+
+        printf("\n");
         printf("sorted buf:");
 
         for (int i = 0; i < sizeOfArray; i++)
@@ -237,14 +338,21 @@ void ArrayProcessor::FindMinOrMax(int* data, int sizeOfArray, bool getMin)
     free(displacements);
 }
 
-void ArrayProcessor::merge_sort_rec(int arr[], int arr_start, int arr_end, int my_rank, int p_start, int p_end)
+void ArrayProcessor::QuickSortRecursive(int arr[], int arr_start, int arr_end, int my_rank, int p_start, int p_end)
 {
     MPI_Status status;
     if ((p_end - p_start) <= 1) {
+        //printf("\n base case sequential sort:process_id:%d,  arr_start:%d , size:%d " , my_rank, arr_start, arr_end - arr_start);
+        printf("\n sequential array sort on process: %d , size: %d [", my_rank , arr_end - arr_start);
+        for (int i = 0; i < arr_end - arr_start; i++)
+        {
+            printf(" %d ", arr[i + arr_start]);
+        }
+        printf("]\n");
         //Base case
         //Perform quicksort on local list
         SequentialProcessor seqProcessor;
-        seqProcessor.serial_qsort(arr + arr_start, arr_end - arr_start);
+        seqProcessor.QuickSort(arr + arr_start, arr_end - arr_start);
     }
     else {
         int split = p_start + (p_end - p_start) / 2 + ((p_end - p_start) % 2);
@@ -256,25 +364,35 @@ void ArrayProcessor::merge_sort_rec(int arr[], int arr_start, int arr_end, int m
 
         //Split array in half and send to other process
         if (my_rank == p_start) {
+            printf("\n recursive sort on another process:caller process_id:%d, called process id: %d,  arr_start:%d , size:%d", my_rank, split, arr_start + arr_split, arr_end - arr_split);
+
             //Send upper half of array
             MPI_Send(arr + arr_start + arr_split, arr_end - arr_split, MPI_INT, split,
                 0, MPI_COMM_WORLD);
         }
         else if (my_rank == split) {
+            //printf("\n child process recieves request to sort :caller process_id:%d, called process id: %d,  size:%d", p_start, my_rank, split_size);
             scratch = (int*)malloc(split_size * sizeof(int));
 
             //Receive upper half of array
             MPI_Recv(scratch, split_size, MPI_INT, p_start, 0, MPI_COMM_WORLD, &status);
+            //printf("\n parallel array sort on process: %d [", my_rank);
+            //for (int i = 0; i < split_size; i++)
+            //{
+            //    printf(" %d ", scratch[i]);
+            //}
+            //printf("]\n");
+
         }
 
         //Recurse
         if (my_rank < split) {
             //Lower-half processes
-            merge_sort_rec(arr, arr_start, arr_split, my_rank, p_start, split);
+            QuickSortRecursive(arr, arr_start, arr_split, my_rank, p_start, split);
         }
         else {
             //Upper-half processes
-            merge_sort_rec(scratch, 0, split_size, my_rank, split, p_end);
+            QuickSortRecursive(scratch, 0, split_size, my_rank, split, p_end);
         }
 
         //Merge both sorted halves
@@ -282,14 +400,31 @@ void ArrayProcessor::merge_sort_rec(int arr[], int arr_start, int arr_end, int m
             scratch = (int*)malloc(split_size * sizeof(int));
 
             //Receive sorted half
+            //printf("\n parent process recieves from child :caller process_id:%d, called process id: %d,  size:%d", my_rank, split, split_size);
             MPI_Recv(scratch, split_size, MPI_INT, split, 0, MPI_COMM_WORLD, &status);
 
+            printf("\nmerge output: parent process %d , child process: %d, my array size:%d, split_size: %d", my_rank , split , arr_split - arr_start , split_size);
+            printf("\nfirst array:[");
+            for (int i = 0; i < arr_split - arr_start; i++)
+            {
+                printf(" %d ", arr[i + arr_start]);
+            }
+            printf("]\n");
+            printf("\nsecond array:[");
+            for (int i = 0; i < split_size; i++)
+            {
+                printf(" %d ", scratch[i + arr_start]);
+            }
+
+            printf("]\n");
             //Merge both sorted arrays
             merge(arr + arr_start, arr_split - arr_start, scratch, split_size);
 
             free(scratch);
         }
         else if (my_rank == split) {
+            //printf("\n child process finishes sorting and send to caller :caller process_id:%d, called process id: %d,  size:%d", p_start, my_rank, split_size);
+
             //Send sorted half
             MPI_Send(scratch, split_size, MPI_INT, p_start, 0, MPI_COMM_WORLD);
 
@@ -323,8 +458,8 @@ void ArrayProcessor::merge(int arr[], int arr_size, int arr_2[], int arr_2_size)
     free(scratch);
 }
 
-void ArrayProcessor::merge_sort(int arr[], size_t size, int my_rank, int comm_sz)
+void ArrayProcessor::QuickSort(int arr[], size_t size, int my_rank, int comm_sz)
 {
-    merge_sort_rec(arr, 0, size, my_rank, 0, comm_sz);
+    QuickSortRecursive(arr, 0, size, my_rank, 0, comm_sz);
 }
 

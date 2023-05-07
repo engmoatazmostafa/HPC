@@ -73,7 +73,7 @@ int* SequentialProcessor::merge(int* A, int asize, int* B, int bsize)
 	return C;
 }
 
-void SequentialProcessor::merge_sort(int* A, int min, int max)
+void SequentialProcessor::MergeSort(int* A, int min, int max)
 {
 	int* C;		
 	int mid = (min + max) / 2;
@@ -86,17 +86,17 @@ void SequentialProcessor::merge_sort(int* A, int min, int max)
 	}
 	else {
 		/* Otherwise, sort the first half */
-		merge_sort(A, min, mid);
+		MergeSort(A, min, mid);
 		/* Now sort the second half */
-		merge_sort(A, mid + 1, max);
+		MergeSort(A, mid + 1, max);
 		/* Now merge the two halves */
 		C = merge(A + min, lowerCount, A + mid + 1, upperCount);
 	}
 }
 
-void SequentialProcessor::serial_qsort(int* arr, size_t size)
+void SequentialProcessor::QuickSort(int* arr, size_t size)
 {
-	serial_qsort_rec(arr, 0, size - 1);
+	QuickSortRecursive(arr, 0, size - 1);
 }
 
 int SequentialProcessor::validate(int* arr, size_t size)
@@ -159,20 +159,20 @@ int SequentialProcessor::binarySearch(int datat[], int item, int low, int high)
 	return low;
 }
 
-void SequentialProcessor::serial_qsort_rec(int* arr, size_t start, size_t stop)
+void SequentialProcessor::QuickSortRecursive(int* arr, size_t start, size_t stop)
 {
 	if (start < stop) {
-		size_t p = partition(arr, start, stop);
+		size_t p = QuickSortPartition(arr, start, stop);
 		if (p > 0) {
-			serial_qsort_rec(arr, start, p - 1);
+			QuickSortRecursive(arr, start, p - 1);
 		}
 		if (p < stop) {
-			serial_qsort_rec(arr, p + 1, stop);
+			QuickSortRecursive(arr, p + 1, stop);
 		}
 	}
 }
 
-size_t SequentialProcessor::partition(int* arr, size_t start, size_t stop)
+size_t SequentialProcessor::QuickSortPartition(int* arr, size_t start, size_t stop)
 {
 	int pivot = arr[stop];
 

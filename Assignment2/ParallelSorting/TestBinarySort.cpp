@@ -3,6 +3,9 @@
 // C program for implementation of
 // binary insertion sort
 #include <iostream>
+#include <vector>
+#include <string>
+#include <sstream>
 using namespace std;
 
 //// A binary search based function
@@ -50,15 +53,68 @@ using namespace std;
 // Driver Code
 int main(int argc, char** argv)
 {
-    int a[]
-        = { 37, 23, 1, 17, 12, 72, 31, 46, 100, 88, 54 };
-    int n = sizeof(a) / sizeof(a[0]), i;
-    ArrayProcessor* proc = new ArrayProcessor(argc, argv);
-    proc->BinarySort(a, n);
+    int sizeOfArray = 20;
+    int algorithm = 0; //0: quick sort , 1: merge sort, 2: binary sort
+    //std::vector<std::string> arguments(argv, argv + argc);
+    //for (std::string& s : arguments) {
+    //    printf(" %s ", s);
+    //}
+    for (int i = 0; i < argc; i++) {
+        if (strcmp(argv[i], "-size") == 0 && i < argc - 1)
+        {
+            string str(argv[i + 1]);
+            std::stringstream sizeStr(str);
+            int tmp;
+            sizeStr >> tmp;
+            if (sizeStr)
+            {
+                sizeOfArray = tmp;
+            }
+        }
+        else if (strcmp(argv[i], "-algorithm") == 0 && i < argc - 1)
+        {
+            if (strcmp(argv[i + 1], "quick") == 0)
+            {
+                algorithm = 0;
+            }
+            else if (strcmp(argv[i + 1], "merge") == 0)
+            {
+                algorithm = 1;
+            }
+            else if (strcmp(argv[i + 1], "binary") == 0)
+            {
+                algorithm = 2;
+            }
+        }
+        printf(" %s " , argv[i]);
+    }
 
-    //cout << "Sorted array: \n";
-    //for (i = 0; i < n; i++)
-    //    cout << " " << a[i];
+    int* arr = (int*)malloc(sizeof(int) * sizeOfArray);
+    for (int i = 0; i < sizeOfArray; i++)
+    {
+
+        arr[i] = rand();
+    }
+    //int a[]
+    //    = { 37, 23, 1, 17, 12, 72, 31, 46, 100, 88, 54 };
+    //int n = sizeof(a) / sizeof(a[0]), i;
+    ArrayProcessor* proc = new ArrayProcessor(argc, argv);
+    switch (algorithm)
+    {
+    case 0:
+        proc->QuickSort(arr, sizeOfArray);
+        break;
+    case 1:
+        proc->MergeSort(arr, sizeOfArray);
+        break;
+    case 2:
+        proc->BinarySort(arr, sizeOfArray);
+        break;
+    default:
+        proc->QuickSort(arr, sizeOfArray);
+        break;
+    }
+
 
     return 0;
 }
