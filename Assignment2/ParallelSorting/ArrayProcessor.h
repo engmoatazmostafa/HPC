@@ -1,13 +1,16 @@
 #pragma once
 #include <vector>
 using namespace std;
+enum UnderlyingSortingAlgorithm { Quick, Merge, Binary };
 class ArrayProcessor
 {
 public:
 	ArrayProcessor(int argc, char* argv[]);
-	void QuickSort(int* data, int sizeOfArray);
+	void QuickSortRecursive(int* data, int sizeOfArray);
 	void BinarySort(int* data, int sizeOfArray);
 	void MergeSort(int* data, int sizeOfArray);
+	void QuickSort(int* data, int sizeOfArray);
+	void LoadBalancedSort(int* data, int sizeOfArray, UnderlyingSortingAlgorithm algorithm);
 	void FindMin(int* data, int sizeOfArray);
 	void FindMax(int* data, int sizeOfArray);
 	void multipleMerge(int intermediateBuf[], int* sendcounts, int* displacements, int numberOfProcesses);
@@ -20,6 +23,6 @@ private:
 	void QuickSortRecursive(int arr[], int arr_start, int arr_end, int my_rank, int p_start, int p_end);
 
 	void merge(int arr[], int arr_size, int arr_2[], int arr_2_size);
-	void QuickSort(int arr[], size_t size, int my_rank, int comm_sz);
+	void QuickSortRecursive(int arr[], size_t size, int my_rank, int comm_sz);
 };
 

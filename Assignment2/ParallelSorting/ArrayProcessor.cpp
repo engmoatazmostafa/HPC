@@ -16,7 +16,7 @@ ArrayProcessor::ArrayProcessor(int argc, char* argv[])
 }
 
 
-void ArrayProcessor::QuickSort(int* data, int sizeOfArray)
+void ArrayProcessor::QuickSortRecursive(int* data, int sizeOfArray)
 {
     int my_rank, comm_sz;
 
@@ -34,25 +34,14 @@ void ArrayProcessor::QuickSort(int* data, int sizeOfArray)
         }
         printf("\n");
     }
-    QuickSort(data, sizeOfArray, my_rank, comm_sz);
+    QuickSortRecursive(data, sizeOfArray, my_rank, comm_sz);
 
     if (my_rank == 0) {
-        //SequentialProcessor seqProcessor;
-
-        //if (seqProcessor.validate(data, sizeOfArray)) {
-        //    printf("\n[Info] Validation successful!\n");
-        //}
-        //else {
-        //    printf("\n[Error] Validation not successful :(\n");
-
-        //}
-        //print_array(data, sizeOfArray);
         printf("\narray output from merge sort\t");
         for (int i = 0; i < sizeOfArray; ++i) {
             printf("%d ", data[i]);
         }
         printf("\n");
-        //free(arr);
     }
 
     MPI_Finalize();
@@ -70,7 +59,6 @@ void ArrayProcessor::BinarySort(int* data, int sizeOfArray)
     int* displacements;                // array describing the displacements where each segment begins
     int rem = (sizeOfArray) % numberOfProcesses; // elements remaining after division among processes
     int sum = 0;                // Sum of counts. Used to calculate displacements
-    //int rec_buf[10000];          // buffer where the received data should be stored
     int *rec_buf;          // buffer where the received data should be stored
     int minSplitSize = sizeOfArray / numberOfProcesses;
     int maxSplitSize = minSplitSize;
@@ -110,20 +98,15 @@ void ArrayProcessor::BinarySort(int* data, int sizeOfArray)
 
     MPI_Gatherv(rec_buf, sendcounts[rank], MPI_INT, intermediateBuf, sendcounts, displacements, MPI_INT, 0, MPI_COMM_WORLD);
 
-    //int baseSize = sendcounts[0];
-    //for (int i = 0; i < numberOfProcesses - 1; i++) {
-    //    merge(intermediateBuf, baseSize, intermediateBuf + baseSize, sendcounts[i + 1]);
-    //    baseSize += sendcounts[i + 1];
-    //}
 
     if (rank == 0)
     {
-        int baseSize = sendcounts[0];
-        for (int i = 0; i < numberOfProcesses - 1; i++) {
-            merge(intermediateBuf, baseSize, intermediateBuf + baseSize, sendcounts[i + 1]);
-            baseSize += sendcounts[i + 1];
-        }
-
+        //int baseSize = sendcounts[0];
+        //for (int i = 0; i < numberOfProcesses - 1; i++) {
+        //    merge(intermediateBuf, baseSize, intermediateBuf + baseSize, sendcounts[i + 1]);
+        //    baseSize += sendcounts[i + 1];
+        //}
+        multipleMerge(intermediateBuf, sendcounts, displacements, numberOfProcesses);
 
         //printf("\n");
         printf("sorted buf:");
@@ -203,19 +186,110 @@ void ArrayProcessor::MergeSort(int* data, int sizeOfArray)
 
     MPI_Gatherv(rec_buf, sendcounts[rank], MPI_INT, intermediateBuf, sendcounts, displacements, MPI_INT, 0, MPI_COMM_WORLD);
 
-    //int baseSize = sendcounts[0];
-    //for (int i = 0; i < numberOfProcesses - 1; i++) {
-    //    merge(intermediateBuf, baseSize, intermediateBuf + baseSize, sendcounts[i + 1]);
-    //    baseSize += sendcounts[i + 1];
-    //}
 
     if (rank == 0)
     {
-        //int baseSize = sendcounts[0];
-        //for (int i = 0; i < numberOfProcesses - 1; i++) {
-        //    merge(intermediateBuf, baseSize, intermediateBuf + baseSize, sendcounts[i + 1]);
-        //    baseSize += sendcounts[i + 1];
-        //}
+        multipleMerge(intermediateBuf, sendcounts, displacements, numberOfProcesses);
+
+
+
+        printf("\n");
+        printf("sorted buf:");
+
+        for (int i = 0; i < sizeOfArray; i++)
+        {
+            printf(" %d ", intermediateBuf[i]);
+        }
+
+        printf("\n");
+    }
+
+
+    printf("\n");
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    MPI_Finalize();
+
+    free(sendcounts);
+    free(displacements);
+
+}
+
+void ArrayProcessor::QuickSort(int* data, int sizeOfArray)
+{
+    LoadBalancedSort(data, sizeOfArray, UnderlyingSortingAlgorithm::Quick);
+}
+
+void ArrayProcessor::LoadBalancedSort(int* data, int sizeOfArray, UnderlyingSortingAlgorithm algorithm)
+{
+    int rank, numberOfProcesses; // for storing this process' rank, and the number of processes
+
+    MPI_Init(&_argc, _argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &numberOfProcesses);
+
+    int* sendcounts;            // array describing how many elements to send to each process
+    int* displacements;                // array describing the displacements where each segment begins
+    int rem = (sizeOfArray) % numberOfProcesses; // elements remaining after division among processes
+    int sum = 0;                // Sum of counts. Used to calculate displacements
+    //int rec_buf[10000];          // buffer where the received data should be stored
+    int* rec_buf;          // buffer where the received data should be stored
+    int minSplitSize = sizeOfArray / numberOfProcesses;
+    int maxSplitSize = minSplitSize;
+    int* intermediateBuf;
+
+
+
+    intermediateBuf = (int*)malloc(sizeof(int) * sizeOfArray);
+    sendcounts = (int*)malloc(sizeof(int) * numberOfProcesses);
+    displacements = (int*)malloc(sizeof(int) * numberOfProcesses);
+    // calculate send counts and displacements
+    for (int i = 0; i < numberOfProcesses; i++) {
+        sendcounts[i] = minSplitSize;
+        if (rem > 0) {
+            maxSplitSize = minSplitSize + 1;
+            sendcounts[i]++;
+            rem--;
+        }
+
+        displacements[i] = sum;
+        sum += sendcounts[i];
+    }
+    rec_buf = (int*)malloc(sizeof(int) * maxSplitSize);
+    int partition_size = 0;
+
+
+    MPI_Bcast(&maxSplitSize, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    // divide the data among processes as described by sendcounts and displs
+    MPI_Scatterv(data, sendcounts, displacements, MPI_INT, rec_buf, maxSplitSize, MPI_INT, 0, MPI_COMM_WORLD);
+
+
+    printf("\nProcess: %d sorts array with size: %d , elements:[", rank, sendcounts[rank]);
+    for (int i = 0; i < sendcounts[rank] - 1; i++) {
+        printf(" %d ", rec_buf[i]);
+    }
+    printf("]\n");
+    //each process do sequential sort on its own partition
+    SequentialProcessor seqProc;
+    if (algorithm == UnderlyingSortingAlgorithm::Binary)
+    {
+        seqProc.binarySort(rec_buf, sendcounts[rank]);
+    }
+    else if (algorithm == UnderlyingSortingAlgorithm::Quick)
+    {
+        seqProc.QuickSort(rec_buf, sendcounts[rank]);
+    }
+    else 
+    {
+        seqProc.MergeSort(rec_buf, 0, sendcounts[rank] - 1);
+    }
+
+
+    MPI_Gatherv(rec_buf, sendcounts[rank], MPI_INT, intermediateBuf, sendcounts, displacements, MPI_INT, 0, MPI_COMM_WORLD);
+
+
+    if (rank == 0)
+    {
         multipleMerge(intermediateBuf, sendcounts, displacements, numberOfProcesses);
 
 
@@ -537,7 +611,7 @@ void ArrayProcessor::multipleMerge(int intermediateBuf[], int* sendcounts, int* 
 
 }
 
-void ArrayProcessor::QuickSort(int arr[], size_t size, int my_rank, int comm_sz)
+void ArrayProcessor::QuickSortRecursive(int arr[], size_t size, int my_rank, int comm_sz)
 {
     QuickSortRecursive(arr, 0, size, my_rank, 0, comm_sz);
 }

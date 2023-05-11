@@ -139,21 +139,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="ParallelSorting.cpp" />
     <ClCompile Include="ArrayProcessor.cpp" />
     <ClCompile Include="SequentialProcessor.cpp" />
-    <ClCompile Include="test.cpp" />
-    <ClCompile Include="test2.cpp" />
     <ClCompile Include="TestBinarySort.cpp" />
-    <ClCompile Include="testMinMax.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ArrayProcessor.h" />
     <ClInclude Include="SequentialProcessor.h" />
-    <ClInclude Include="test.h" />
-    <ClInclude Include="test2.h" />
     <ClInclude Include="TestBinarySort.h" />
-    <ClInclude Include="testMinMax.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

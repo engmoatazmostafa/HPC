@@ -111,6 +111,7 @@ int main(int argc, char** argv)
     //for (std::string& s : arguments) {
     //    printf(" %s ", s);
     //}
+    int approach = 0; //0: load balanced , 1: recursive
     for (int i = 0; i < argc; i++) {
         if (strcmp(argv[i], "-size") == 0 && i < argc - 1)
         {
@@ -138,6 +139,18 @@ int main(int argc, char** argv)
                 algorithm = 2;
             }
         }
+        else if (strcmp(argv[i], "-approach") == 0 && i < argc - 1)
+        {
+            if (strcmp(argv[i + 1], "loadbalanced") == 0)
+            {
+                approach = 0;
+            }
+            else if (strcmp(argv[i + 1], "recursive") == 0)
+            {
+                approach = 1;
+            }
+        }
+
         printf(" %s " , argv[i]);
     }
 
@@ -154,8 +167,12 @@ int main(int argc, char** argv)
     switch (algorithm)
     {
     case 0:
-        proc->QuickSort(arr, sizeOfArray);
-        break;
+        if (approach == 0) {
+            proc->QuickSort(arr, sizeOfArray);
+        }
+        else {
+            proc->QuickSortRecursive(arr, sizeOfArray);
+        }        break;
     case 1:
         proc->MergeSort(arr, sizeOfArray);
         break;
@@ -163,7 +180,7 @@ int main(int argc, char** argv)
         proc->BinarySort(arr, sizeOfArray);
         break;
     default:
-        proc->QuickSort(arr, sizeOfArray);
+        proc->QuickSortRecursive(arr, sizeOfArray);
         break;
     }
 

@@ -15,22 +15,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ParallelSorting.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ArrayProcessor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SequentialProcessor.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="test.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="testMinMax.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="test2.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="TestBinarySort.cpp">
@@ -42,15 +30,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SequentialProcessor.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="test.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="testMinMax.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="test2.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="TestBinarySort.h">
