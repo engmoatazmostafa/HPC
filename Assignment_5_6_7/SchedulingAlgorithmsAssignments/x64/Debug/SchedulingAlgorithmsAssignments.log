@@ -1,5 +1,5 @@
 ﻿  HoffmanGrahamScheduler.cpp
 F:\mezo\pre-master\HighPerformanceComputing\MPI\HPC\Assignment_5_6_7\SchedulingAlgorithmsAssignments\Scheduler.h(2,10): warning C4067: unexpected tokens following preprocessor directive - expected a newline
 F:\mezo\pre-master\HighPerformanceComputing\MPI\HPC\Assignment_5_6_7\SchedulingAlgorithmsAssignments\HoffmanGrahamScheduler.cpp(53,63): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
-F:\mezo\pre-master\HighPerformanceComputing\MPI\HPC\Assignment_5_6_7\SchedulingAlgorithmsAssignments\HoffmanGrahamScheduler.cpp(144,12): warning C4101: 'key': unreferenced local variable
+F:\mezo\pre-master\HighPerformanceComputing\MPI\HPC\Assignment_5_6_7\SchedulingAlgorithmsAssignments\HoffmanGrahamScheduler.cpp(143,12): warning C4101: 'key': unreferenced local variable
   SchedulingAlgorithmsAssignments.vcxproj -> F:\mezo\pre-master\HighPerformanceComputing\MPI\HPC\Assignment_5_6_7\SchedulingAlgorithmsAssignments\x64\Debug\SchedulingAlgorithmsAssignments.exe

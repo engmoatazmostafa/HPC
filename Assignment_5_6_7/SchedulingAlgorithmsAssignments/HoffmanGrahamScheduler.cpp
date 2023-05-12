@@ -57,21 +57,20 @@ map<string, NodePriorityParameters> HoffmanGrahamScheduler::GetParents(map<strin
 
             if (Nodes.count(parentKey) > 0)
             {
-                int nUnLabeledSuccessors = 0;
+                vector<int> successorsPriorities;
                 for (int j = 0; j < Nodes[parentKey].Successors.size(); j++)
                 {
                     string tmpKey = Nodes[parentKey].Successors[j];
 
-                    if (Nodes.count(tmpKey) > 0 && Nodes[tmpKey].Priority == -1)
+                    if (Nodes.count(tmpKey) > 0 && Nodes[tmpKey].Priority > -1)
                     {
-                        nUnLabeledSuccessors++;
-                        break;
+                        successorsPriorities.push_back(Nodes[tmpKey].Priority);
                     }
                 }
-                if (nUnLabeledSuccessors == 0)
+                if (successorsPriorities.size() == Nodes[parentKey].Successors.size())
                 {
                     parametersList[parentKey].name = parentKey;
-                    parametersList[parentKey].sucessorsPriorities.push_back(element.second.priority);
+                    parametersList[parentKey].sucessorsPriorities = successorsPriorities;
                 }
             }
         }
