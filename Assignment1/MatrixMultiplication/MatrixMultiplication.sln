@@ -11,6 +11,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ParallelSorting", "..\..\As
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CyclicBlock", "..\..\Assignment3\CyclicBlock\CyclicBlock.vcxproj", "{C84E47CA-08BD-418B-8B2D-C105539F750E}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SchedulingAlgorithmsAssignments", "..\..\Assignment_5_6_7\SchedulingAlgorithmsAssignments\SchedulingAlgorithmsAssignments.vcxproj", "{01321C1E-515E-4E74-B6A5-A4B88DDAB0B4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -51,6 +53,14 @@ Global
 		{C84E47CA-08BD-418B-8B2D-C105539F750E}.Release|x64.Build.0 = Release|x64
 		{C84E47CA-08BD-418B-8B2D-C105539F750E}.Release|x86.ActiveCfg = Release|Win32
 		{C84E47CA-08BD-418B-8B2D-C105539F750E}.Release|x86.Build.0 = Release|Win32
+		{01321C1E-515E-4E74-B6A5-A4B88DDAB0B4}.Debug|x64.ActiveCfg = Debug|x64
+		{01321C1E-515E-4E74-B6A5-A4B88DDAB0B4}.Debug|x64.Build.0 = Debug|x64
+		{01321C1E-515E-4E74-B6A5-A4B88DDAB0B4}.Debug|x86.ActiveCfg = Debug|Win32
+		{01321C1E-515E-4E74-B6A5-A4B88DDAB0B4}.Debug|x86.Build.0 = Debug|Win32
+		{01321C1E-515E-4E74-B6A5-A4B88DDAB0B4}.Release|x64.ActiveCfg = Release|x64
+		{01321C1E-515E-4E74-B6A5-A4B88DDAB0B4}.Release|x64.Build.0 = Release|x64
+		{01321C1E-515E-4E74-B6A5-A4B88DDAB0B4}.Release|x86.ActiveCfg = Release|Win32
+		{01321C1E-515E-4E74-B6A5-A4B88DDAB0B4}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
