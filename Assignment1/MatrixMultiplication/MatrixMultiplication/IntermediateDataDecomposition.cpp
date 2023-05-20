@@ -174,8 +174,6 @@ void IntermediateDataDecomposition::Multiply(vector<vector<int>> A, vector<vecto
             }
         }
 
-        //int x = 9;
-        //MPI_Send(&x, 1, MPI_INT, 1, 1, MPI_COMM_WORLD);
 
         //SUM INTERMEDIATE MATRICES (SEQUENTIAL)
         for (int k = 0; k < numberOfProcesses; k++)
@@ -210,12 +208,6 @@ void IntermediateDataDecomposition::Multiply(vector<vector<int>> A, vector<vecto
         }
         MPI_Send(subResultBuffer, subResultSize, MPI_INT, 0, 0, MPI_COMM_WORLD);
 
-        //if (rank == 1)
-        //{
-        //    int x2 = 0;
-        //    MPI_Recv(&x2, 1, MPI_INT, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        //    printf("GOT X2:%d", x2);
-        //}
     }
     MPI_Barrier(MPI_COMM_WORLD);
 
