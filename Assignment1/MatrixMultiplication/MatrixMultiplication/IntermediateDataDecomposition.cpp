@@ -82,29 +82,40 @@ void IntermediateDataDecomposition::Multiply(int A[][N], int B[][N], int C[][N])
 void IntermediateDataDecomposition::Multiply(vector<vector<int>> A, vector<vector<int>> B)
 {
     int numberOfRows = A.size();
-    int numberOfColumns = A[0].size();
+    int numberOfColumns = B[0].size();
     vector<vector<int>> C(numberOfRows);
-    vector<vector<vector<int> > > Intermediate = vector<vector<vector<int> > >(numberOfColumns, vector<vector<int> >(numberOfRows, vector<int>(numberOfColumns, 0)));
 
     MPI_Init(&_argc, _argv);
     int rank, numberOfProcesses;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &numberOfProcesses);
 
-    int* sendcounts = (int*)malloc(sizeof(int) * numberOfProcesses); // array describing how many row to send to each process
-    int* displacements = (int*)malloc(sizeof(int) * numberOfProcesses);
-
-    int minSplitSize = numberOfRows / numberOfProcesses;
-    int rem = (numberOfRows) % numberOfProcesses; // elements remaining after division among processes
-    int sum = 0;                // Sum of counts. Used to calculate displacements
+    int* rows_sendcounts = (int*)malloc(sizeof(int) * numberOfProcesses); // array describing how many row to send to each process
+    int* row_displacements = (int*)malloc(sizeof(int) * numberOfProcesses);
+    int* columns_sendcounts = (int*)malloc(sizeof(int) * numberOfProcesses); // array describing how many row to send to each process
+    int* columns_displacements = (int*)malloc(sizeof(int) * numberOfProcesses);
+    int rows_split_size = numberOfRows / numberOfProcesses;
+    int columns_split_size = numberOfColumns / numberOfProcesses;
+    int rows_remainder = (numberOfRows) % numberOfProcesses; // elements remaining after division among processes
+    int columns_remainder = (numberOfColumns) % numberOfProcesses; // elements remaining after division among processes
+    int rows_sum = 0;                // Sum of counts. Used to calculate displacements
+    int columns_sum = 0;                // Sum of counts. Used to calculate displacements
     for (int i = 0; i < numberOfProcesses; i++) {
-        sendcounts[i] = minSplitSize;
-        if (rem > 0) {
-            sendcounts[i]++;
-            rem--;
+        rows_sendcounts[i] = rows_split_size;
+        if (rows_remainder > 0) {
+            rows_sendcounts[i]++;
+            rows_remainder--;
         }
-        displacements[i] = sum;
-        sum += sendcounts[i];
+        row_displacements[i] = rows_sum;
+        rows_sum += rows_sendcounts[i];
+
+        columns_sendcounts[i] = columns_split_size;
+        if (columns_remainder > 0) {
+            columns_sendcounts[i]++;
+            columns_remainder--;
+        }
+        columns_displacements[i] = columns_sum;
+        columns_sum += columns_sendcounts[i];
     }
     if (rank == 0)
     {
@@ -115,53 +126,59 @@ void IntermediateDataDecomposition::Multiply(vector<vector<int>> A, vector<vecto
         }
 
     }
+    printf("\nrows displcaments:");
+    printArray(row_displacements, numberOfProcesses);
 
+    printf("\ncolumns displcaments:");
+    printArray(columns_displacements, numberOfProcesses);
 
-    int lowerIndex = displacements[rank];
-    int upperIndex = displacements[rank] + sendcounts[rank] - 1;
+    printf("\nrows counts:");
+    printArray(rows_sendcounts, numberOfProcesses);
+
+    printf("\ncolumns counts:");
+    printArray(columns_sendcounts, numberOfProcesses);
+
+    printf("\nProcess[%d] PartitionA:", rank);
+    printf("\n");
+    vector<vector<int>> partitionA = Partition(A, 0, numberOfRows, columns_displacements[rank], columns_sendcounts[rank]);
+    printMatrix(partitionA);
+
+    printf("\nProcess[%d] PartitionB:", rank);
+    vector<vector<int>> partitionB = Partition(B, row_displacements[rank], rows_sendcounts[rank], 0, numberOfColumns);
+    printf("\n");
+    printMatrix(partitionB);
+
     int subResultSize = numberOfRows * numberOfColumns;
 
     if (rank == 0)
     {
         //ROOT PROCESS
-        
-        ////CALCULATE INTERMEDIATE MATRICES ASSIGNED TO ROOT
-        for (int rowIndex = 0; rowIndex < numberOfRows; rowIndex++)
-        {
-            for (int columnIndex = 0; columnIndex < numberOfColumns; columnIndex++)
-            {
-                for (int k = lowerIndex; k <= upperIndex; k++)
-                {
-                    Intermediate[k][rowIndex][columnIndex] = A[rowIndex][k] * B[k][columnIndex];
-                }
-            }
-        }
+        vector<vector<vector<int> > > Intermediate = vector<vector<vector<int> > >(numberOfProcesses, vector<vector<int> >(numberOfRows, vector<int>(numberOfColumns, 0)));
+        Intermediate[rank] = SequentialMultiplication(partitionA, partitionB);
 
 
-        ////RECIEVE OTHER PROCESSES INTERMEDIATE MATRICES
+        //RECIEVE OTHER PROCESSES INTERMEDIATE MATRICES
+
         for (int otherProcessIndex = 1; otherProcessIndex < numberOfProcesses; otherProcessIndex++)
         {
-
-            int lowerIndex = displacements[otherProcessIndex];
-            int upperIndex = displacements[otherProcessIndex] + sendcounts[otherProcessIndex] - 1;
-            for (int k = lowerIndex; k <= upperIndex; k++)
+            int* otherResultBuffer = (int*)malloc(sizeof(int) * subResultSize);
+            MPI_Recv(otherResultBuffer, subResultSize, MPI_INT, otherProcessIndex, 0, MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
+            int index = 0;
+            for (int rowIndex = 0; rowIndex < numberOfRows; rowIndex++)
             {
-                int* otherResultBuffer = (int*)malloc(sizeof(int) * subResultSize);
-                MPI_Recv(otherResultBuffer, subResultSize, MPI_INT, otherProcessIndex, 0, MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
-                int index = 0;
-                for (int rowIndex = 0; rowIndex < numberOfRows; rowIndex++)
+                for (int columnIndex = 0; columnIndex < numberOfColumns; columnIndex++)
                 {
-                    for (int columnIndex = 0; columnIndex < numberOfColumns; columnIndex++)
-                    {
-                        Intermediate[k][rowIndex][columnIndex] = otherResultBuffer[index];
-                        index++;
-                    }
+                    Intermediate[otherProcessIndex][rowIndex][columnIndex] = otherResultBuffer[index];
+                    index++;
                 }
             }
         }
 
-        ////SUM INTERMEDIATE MATRICES (SEQUENTIAL)
-        for (int k = 0; k < numberOfColumns; k++)
+        //int x = 9;
+        //MPI_Send(&x, 1, MPI_INT, 1, 1, MPI_COMM_WORLD);
+
+        //SUM INTERMEDIATE MATRICES (SEQUENTIAL)
+        for (int k = 0; k < numberOfProcesses; k++)
         {
             printf("\nintermediate output[%d]\n" , k);
             printMatrix(Intermediate[k]);
@@ -180,45 +197,50 @@ void IntermediateDataDecomposition::Multiply(vector<vector<int>> A, vector<vecto
     }
     else
     {
-        //NON-ROOT PROCESSES
-
-        ////CALCULATE INTERMEDIATE MATRICES
+        vector<vector<int>> processIntermediateMatrix = SequentialMultiplication(partitionA, partitionB);
+        int* subResultBuffer = (int*)malloc(sizeof(int) * subResultSize);
+        int bufferIndex = 0;
         for (int rowIndex = 0; rowIndex < numberOfRows; rowIndex++)
         {
             for (int columnIndex = 0; columnIndex < numberOfColumns; columnIndex++)
             {
-                for (int k = lowerIndex; k <= upperIndex; k++)
-                {
-                    Intermediate[k][rowIndex][columnIndex] = A[rowIndex][k] * B[k][columnIndex];
-                }
+                subResultBuffer[bufferIndex] = processIntermediateMatrix[rowIndex][columnIndex];
+                bufferIndex++;
             }
         }
+        MPI_Send(subResultBuffer, subResultSize, MPI_INT, 0, 0, MPI_COMM_WORLD);
 
-
-
-        ////SEND TO ROOT 
-        for (int k = lowerIndex; k <= upperIndex; k++)
-        {
-
-
-            int* subResultBuffer = (int*)malloc(sizeof(int) * subResultSize);
-            int bufferIndex = 0;
-            for (int rowIndex = 0; rowIndex < numberOfRows; rowIndex++)
-            {
-                for (int columnIndex = 0; columnIndex < numberOfColumns; columnIndex++)
-                {
-                    subResultBuffer[bufferIndex] = Intermediate[k][rowIndex][columnIndex];
-                    bufferIndex++;
-                }
-            }
-            MPI_Send(subResultBuffer, subResultSize, MPI_INT, 0, 0, MPI_COMM_WORLD);
-        }
-
-
-
+        //if (rank == 1)
+        //{
+        //    int x2 = 0;
+        //    MPI_Recv(&x2, 1, MPI_INT, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        //    printf("GOT X2:%d", x2);
+        //}
     }
     MPI_Barrier(MPI_COMM_WORLD);
 
     MPI_Finalize();
 
 }
+
+vector<vector<int>> IntermediateDataDecomposition::Partition(vector<vector<int>> v, int rowdisplacement, int rows, int columndisplacement, int columns)
+{
+
+    vector<vector<int>> partition = vector<vector<int>>(rows, vector<int>(columns));
+    printf("\nVector size:[%d X %d] , row displacement:%d , rows count: %d , column displacement: %d , columns count: %d" , rows , columns , rowdisplacement , rows , columndisplacement , columns);
+    printf("\n");
+    int i = 0;
+    int j = 0;
+    for (int rowIndex = rowdisplacement, i = 0; i < rows; rowIndex++, i++)
+    {
+        for (int columnIndex = columndisplacement, j = 0; j < columns; columnIndex++, j++)
+        {
+            partition[i][j] = v[rowIndex][columnIndex];
+        }
+    }
+    return partition;
+}
+
+
+
+

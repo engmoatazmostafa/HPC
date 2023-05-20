@@ -100,9 +100,9 @@ void OutputDataDecomposition::Multiply(vector<vector<int>> A, vector<vector<int>
     }
 
 
-    //rows indeces range for current process
-    int lowerRowIndex = displacements[rank];
-    int upperRowIndex = displacements[rank] + sendcounts[rank] - 1;
+    //cells indeces range for current process
+    int lowerIndex = displacements[rank];
+    int upperIndex = displacements[rank] + sendcounts[rank] - 1;
     if (rank == 0)
     {
         //root process
@@ -115,7 +115,7 @@ void OutputDataDecomposition::Multiply(vector<vector<int>> A, vector<vector<int>
         }
 
         //calculate output for assigned cells
-        for (int index = lowerRowIndex; index <= upperRowIndex; index++)
+        for (int index = lowerIndex; index <= upperIndex; index++)
         {
             int rowIndex = index / numberOfColumns;
             int columnIndex = index % numberOfColumns;
@@ -136,8 +136,8 @@ void OutputDataDecomposition::Multiply(vector<vector<int>> A, vector<vector<int>
             int* otherResultBuffer = (int*)malloc(sizeof(int) * otherResultSize);
             MPI_Recv(otherResultBuffer, otherResultSize, MPI_INT, otherProcessIndex, 0, MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
 
-            int lowerIndex = displacements[otherProcessIndex];
-            int upperIndex = displacements[otherProcessIndex] + sendcounts[otherProcessIndex] - 1;
+            lowerIndex = displacements[otherProcessIndex];
+            upperIndex = displacements[otherProcessIndex] + sendcounts[otherProcessIndex] - 1;
             int bufferIndex = 0;
             for (int index = lowerIndex; index <= upperIndex; index++, bufferIndex++)
             {
@@ -156,7 +156,7 @@ void OutputDataDecomposition::Multiply(vector<vector<int>> A, vector<vector<int>
         int subResultSize = sendcounts[rank];
         int* subResultBuffer = (int*)malloc(sizeof(int) * subResultSize);
         int bufferIndex = 0;
-        for (int index = lowerRowIndex; index <= upperRowIndex; index++, bufferIndex++)
+        for (int index = lowerIndex; index <= upperIndex; index++, bufferIndex++)
         {
             int rowIndex = index / numberOfColumns;
             int columnIndex = index % numberOfColumns;

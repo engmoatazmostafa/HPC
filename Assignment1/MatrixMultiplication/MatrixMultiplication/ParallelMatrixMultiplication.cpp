@@ -20,3 +20,25 @@ void ParallelMatrixMultiplication::printArray(int* A, int size)
         printf(" %d ", A[i]);
     }
 }
+vector<vector<int>> ParallelMatrixMultiplication::SequentialMultiplication(vector<vector<int>> A, vector<vector<int>> B)
+{
+    int rows = A.size();
+    int firstMatrixColumns = A[0].size();
+    int columns = B[0].size();
+    int secondMatrixRows = B.size();
+    vector<vector<int>> result = vector<vector<int>>(rows, vector<int>(columns, 0));
+    if (firstMatrixColumns != secondMatrixRows) return result;
+
+    for (int rowIndex = 0; rowIndex < rows; rowIndex++)
+    {
+        for (int columnIndex = 0; columnIndex < columns; columnIndex++)
+        {
+            for (int k = 0; k < firstMatrixColumns; k++)
+            {
+                result[rowIndex][columnIndex] += A[rowIndex][k] * B[k][columnIndex];
+            }
+        }
+    }
+
+    return result;
+}

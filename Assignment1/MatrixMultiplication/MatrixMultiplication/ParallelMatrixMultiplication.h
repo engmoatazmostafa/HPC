@@ -9,7 +9,10 @@ class ParallelMatrixMultiplication
 public:
 	virtual void Multiply(int A[][N], int B[][N], int C[][N]) = 0;
 	virtual void Multiply(vector<vector<int>> A, vector<vector<int>> B) = 0;
+	vector<vector<int>> SequentialMultiplication(vector<vector<int>> A, vector<vector<int>> B);
+
 protected:
+
 	void printMatrix(vector<vector<int>> A);
 	void printArray(int* A, int size);
 };

@@ -1,62 +1,70 @@
 #include <iostream>
 #include "ParallelMatrixMultiplicationFactory.h"
+vector<vector<int>> CreateMatrix(int dimensionSize, bool randomNumbers)
+{
+    vector<vector<int>> v(dimensionSize, vector<int>(dimensionSize, 1));
+    if (!randomNumbers) return v;
+
+    for (int i = 0; i < dimensionSize; i++)
+    {
+        for (int j = 0; j < dimensionSize; j++)
+        {
+            v[i][j] = rand() % 10 + 1;
+        }
+    }
+    return v;
+}
 int main(int argc, char* argv[])
 {
-    
-    int A[N][N] = { 
-        { 1, 1, 1 },
-        { 2, 2, 2 },
-        { 3, 3, 3 } };
-
-    int B[N][N] = { 
-        { 1, 1, 1 },
-        { 2, 2, 2 },
-        { 3, 3, 3 } };
-
-    int C[N][N] = { 
-            { 0, 0 , 0},
-            { 0, 0 , 0},
-            { 0, 0 , 0} };
-
-
-    vector<vector<int>> vA = {
-        {1,1,1,1}
-        ,{1,1,1,1}
-        ,{1,1,1,1}
-        ,{1,1,1,1}
-    };
-    vector<vector<int>> vB = {
-        {1,1,1,1}
-        ,{1,1,1,1}
-        ,{1,1,1,1}
-        ,{1,1,1,1}
-    };
+    bool randomNumbers = false;
+    int dimensionSize = 4;
     DataDecomposition dataDecompisition = DataDecomposition::Input;
     for (int i = 0; i < argc; i++) {
-        if (std::string(argv[i]).compare("data-decomposition-input"))
+        if (strcmp(argv[i], "-dc") == 0 && i < argc - 1)
         {
-            dataDecompisition = DataDecomposition::Input;
-            break;
+            if (strcmp(argv[i + 1], "1") == 0)
+            {
+                dataDecompisition = DataDecomposition::Input;
+            }
+            else if (strcmp(argv[i + 1], "2") == 0)
+            {
+                dataDecompisition = DataDecomposition::Output;
+            }
+            else if (strcmp(argv[i + 1], "3") == 0)
+            {
+                dataDecompisition = DataDecomposition::Intermediate;
+            }
         }
-        else if (std::string(argv[i]).compare("data-decomposition-output"))
+        else if (strcmp(argv[i], "-s") == 0 && i < argc - 1)
         {
-            dataDecompisition = DataDecomposition::Output;
-            break;
+            try
+            {
+                dimensionSize = atoi(argv[i + 1]);
+            }
+            catch (exception e)
+            {
+
+            }
         }
-        else if (std::string(argv[i]).compare("data-decomposition-intermediate"))
+        else if (strcmp(argv[i], "-r") == 0 && i < argc - 1)
         {
-            dataDecompisition = DataDecomposition::Intermediate;
-            break;
+            try
+            {
+                randomNumbers = atoi(argv[i + 1]) == 1 ? true : false;
+            }
+            catch (exception e)
+            {
+
+            }
         }
     }
 
-    dataDecompisition = DataDecomposition::Intermediate;
+    vector<vector<int>> A = CreateMatrix(dimensionSize, randomNumbers);
+    vector<vector<int>> B = CreateMatrix(dimensionSize, randomNumbers);
+
     ParallelMatrixMultiplication* instance = ParallelMatrixMultiplicationFactory::CreateInstance(dataDecompisition,argc, argv);
 
-    instance->Multiply(vA, vB);
-
-
-
+    instance->Multiply(A, B);
 
     return 0;
 
